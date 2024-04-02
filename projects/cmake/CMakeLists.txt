@@ -85,7 +85,7 @@ install(TARGETS PBR DESTINATION ${PROJECT_DATA_DIR})
 macro(add_spirv shadername stage)
     add_custom_command(
         OUTPUT ${PROJECT_BINARY_DIR}/spirv/${shadername}.spv
-        COMMAND ${glslangValidator} -V -S ${stage} -o ${PROJECT_BINARY_DIR}/spirv/${shadername}.spv ${PROJECT_DATA_DIR}/shaders/glsl/${shadername}.glsl > /dev/null
+        COMMAND ${glslangValidator} -V -S ${stage} -o ${PROJECT_BINARY_DIR}/spirv/${shadername}.spv ${PROJECT_DATA_DIR}/shaders/glsl/${shadername}.glsl
         DEPENDS ${PROJECT_DATA_DIR}/shaders/glsl/${shadername}.glsl
     )
     set(spirvDependencies ${spirvDependencies} ${PROJECT_BINARY_DIR}/spirv/${shadername}.spv)

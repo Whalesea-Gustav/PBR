@@ -3,6 +3,12 @@ project(PBR)
 
 set(PROJECT_DATA_DIR ${PROJECT_SOURCE_DIR}/data)
 
+set(CMAKE_INSTALL_PREFIX "${PROJECT_SOURCE_DIR}/bin")
+set(BINARY_ROOT_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_BUILD_TYPE}")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${BINARY_ROOT_DIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${BINARY_ROOT_DIR}")
+
 # For compatibility with MSVC
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_DEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
@@ -16,8 +22,8 @@ find_package(PkgConfig REQUIRED)
 find_package(OpenGL)
 find_package(Vulkan)
 
-pkg_check_modules(GLFW REQUIRED glfw3)
-pkg_check_modules(ASSIMP REQUIRED assimp)
+find_package(assimp)
+find_package(glfw3)
 
 set(srcCommon
     src/common/application.cpp
@@ -77,7 +83,16 @@ add_executable(PBR ${srcCommon} ${srcLibraries} ${srcRenderers})
 target_compile_features(PBR PRIVATE cxx_std_14)
 target_compile_definitions(PBR PRIVATE GLFW_INCLUDE_NONE GLM_ENABLE_EXPERIMENTAL ${features})
 target_include_directories(PBR PRIVATE ${includePath} ${GLFW_INCLUDE_DIRS} ${ASSIMP_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${VULKAN_INCLUDE_DIRS})
-target_link_libraries(PBR dl ${GLFW_LIBRARIES} ${ASSIMP_LIBRARIES} ${OPENGL_LIBRARIES} ${VULKAN_LIBRARIES})
+#target_link_libraries(PBR dl glfw assimp::assimp ${OPENGL_LIBRARIES} Vulkan::Vulkan)
+target_link_libraries(PBR glfw assimp::assimp ${OPENGL_LIBRARIES} Vulkan::Vulkan)
+
+set(POST_BUILD_COMMANDS
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${BINARY_ROOT_DIR}"
+        #COMMAND ${CMAKE_COMMAND} -E remove_directory "${BINARY_ROOT_DIR}/${ENGINE_ASSET_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_DATA_DIR}/" "${BINARY_ROOT_DIR}/"
+)
+
+add_custom_command(TARGET PBR ${POST_BUILD_COMMANDS})
 
 install(TARGETS PBR DESTINATION ${PROJECT_DATA_DIR})
 
@@ -85,7 +100,7 @@ install(TARGETS PBR DESTINATION ${PROJECT_DATA_DIR})
 macro(add_spirv shadername stage)
     add_custom_command(
         OUTPUT ${PROJECT_BINARY_DIR}/spirv/${shadername}.spv
-        COMMAND ${glslangValidator} -V -S ${stage} -o ${PROJECT_BINARY_DIR}/spirv/${shadername}.spv ${PROJECT_DATA_DIR}/shaders/glsl/${shadername}.glsl > /dev/null
+        COMMAND ${glslangValidator} -V -S ${stage} -o ${PROJECT_BINARY_DIR}/spirv/${shadername}.spv ${PROJECT_DATA_DIR}/shaders/glsl/${shadername}.glsl
         DEPENDS ${PROJECT_DATA_DIR}/shaders/glsl/${shadername}.glsl
     )
     set(spirvDependencies ${spirvDependencies} ${PROJECT_BINARY_DIR}/spirv/${shadername}.spv)
